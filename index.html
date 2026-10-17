@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DX Dashboard v3 · Việt Nam</title>
+<style>
+:root{--bg:#0a0e1d;--p:#121a31;--p2:#18213f;--line:#26325a;--tx:#e9ecf8;--mu:#8a93b5;--vi:#7a5cff;--cy:#2fd3c0;--go:#ffd36b;--rd:#ff7a7a;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 500px at 70% -10%,#1c2656 0,transparent 60%),var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:860px;margin:0 auto;padding:18px 14px 40px}
+h1{font:300 clamp(26px,6vw,40px)/1.15 Georgia,"Times New Roman",serif;margin:6px 0 4px;letter-spacing:-.5px}
+.sub{color:var(--mu);font-size:13px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,select,input[type=range]{font:inherit}
+button,select{background:var(--p2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--vi)}button:focus-visible,select:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.hero{background:linear-gradient(180deg,var(--p) 0,#0e1428 100%);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px;margin:12px 0}
+.hero svg{width:100%;height:auto;display:block}
+.when{display:flex;align-items:center;gap:12px;margin-top:6px}
+.when input{flex:1;accent-color:var(--cy)}.when b{min-width:112px;text-align:right}
+.sum{font:17px/1.6 Georgia,serif;background:var(--p);border-left:3px solid var(--go);border-radius:6px;padding:14px 16px;margin:12px 0}
+.al{background:#2a2410;border:1px solid var(--go);color:var(--go);border-radius:10px;padding:9px 13px;margin:8px 0;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}
+.st{background:var(--p);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.st b{display:block;font-size:19px}.st span{color:var(--mu);font-size:12px}.st small{display:block;color:var(--mu);font-size:11px}
+.card{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.card h2{margin:0;font-size:16px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.card h2 em{font-style:normal;font-size:28px;font-weight:600}.card h2 small{font-size:13px;color:var(--mu);font-weight:400}
+.why{color:var(--mu);font-size:13px;margin:4px 0}.cf{font-size:13px}
+.heat{display:grid;grid-template-columns:repeat(48,1fr);gap:1px;margin-top:8px}
+.heat i{height:22px;border-radius:2px}.heat i.sel{outline:2px solid #fff;z-index:1}
+.ax{display:flex;justify-content:space-between;color:var(--mu);font-size:11px;margin-top:2px}
+.feed{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin:10px 0;font-size:13px}
+.feed div{padding:5px 0;border-bottom:1px solid var(--line)}.feed div:last-child{border:0}.feed time{color:var(--mu);margin-right:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--mu)}
+.chip.ok{border-color:#2f8f84;color:var(--cy)}.chip.bad{border-color:#a04a4a;color:var(--rd)}
+a{color:var(--cy)}.err{color:var(--rd)}
+@media (prefers-reduced-motion:no-preference){.hero rect.b{transition:height .5s,y .5s}}
+</style>
+</head>
+<body>
+<main>
+<h1>Tối nay nghe được gì?</h1>
+<div class="sub" id="place">Đang tải…</div>
+<div class="bar">
+  <select id="places" aria-label="Địa điểm"></select>
+  <button id="gps">Dùng vị trí hiện tại</button><button id="save">Lưu điểm này</button><button id="notify">Bật thông báo</button><button id="refresh">Làm mới</button>
+</div>
+<div id="alerts"></div>
+<div class="hero"><div id="dial"></div>
+  <div class="when"><span class="sub">Giờ xem</span><input id="slider" type="range" min="0" max="47" value="0" aria-label="Chọn giờ xem"><b id="whenTxt"></b></div></div>
+<div class="sum" id="sum">Đang lấy dữ liệu…</div>
+<div class="grid" id="stats"></div>
+<div id="cards"></div>
+<h3 style="margin:18px 0 0;font-weight:500">Điều kiện sóng ngắn theo HamQSL</h3><div class="feed" id="hq">–</div>
+<h3 style="margin:18px 0 0;font-weight:500">Cảnh báo mới nhất từ NOAA</h3>
+<div class="feed" id="feed">–</div>
+<div class="chips" id="chips"></div>
+<p class="sub">Đối chiếu ducting: <a href="https://www.dxinfocentre.com/tropo_sea.html" target="_blank" rel="noopener">bản đồ DXInfo (Đông Nam Á)</a> · <a href="https://vhf.dxview.org/" target="_blank" rel="noopener">điều kiện thực tế dxview</a>. Dữ liệu: HamQSL (N0NBH, gốc NOAA/GIRO), NOAA SWPC, Open-Meteo. Điểm số là ước tính tự tính, không phải số đo trực tiếp. Chưa có dữ liệu sporadic E.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id),clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),pad=n=>String(n).padStart(2,"0");
+const DEF={name:"TP. Hồ Chí Minh",lat:10.78,lon:106.70};
+let places=JSON.parse(localStorage.getItem("dx_places")||"[]"),cur=JSON.parse(localStorage.getItem("dx_cur")||"null")||DEF;
+let notifyOn=localStorage.getItem("dx_notify")==="1",sent={},D=null;
+const num=x=>{x=typeof x==="string"?parseFloat(x):x;return Number.isFinite(x)?x:null};
+// NOAA đổi định dạng JSON theo thời gian: hỗ trợ cả mảng-đối-tượng và mảng-mảng có dòng tiêu đề
+const objs=d=>Array.isArray(d)&&Array.isArray(d[0])?d.slice(1).map(r=>Object.fromEntries(d[0].map((k,i)=>[k,r[i]]))):(Array.isArray(d)?d:[d]);
+const jget=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()};
+const fmtT=(t,off)=>{const x=new Date(t+off*1000);return pad(x.getUTCHours())+":"+pad(x.getUTCMinutes())+" "+pad(x.getUTCDate())+"/"+pad(x.getUTCMonth()+1)};
+function ramp(s){const st=[[0,[27,33,64]],[35,[75,63,174]],[60,[122,92,255]],[80,[47,211,192]],[100,[255,211,107]]];s=clamp(s,0,100);for(let i=1;i<st.length;i++)if(s<=st[i][0]){const[a,A]=st[i-1],[b,B]=st[i],t=(s-a)/(b-a);return"rgb("+A.map((v,k)=>Math.round(v+(B[k]-v)*t)).join(",")+")"}return"rgb(255,211,107)"}
+const lab=s=>s>=70?"Tốt":s>=40?"Khá":"Yếu";
+function xclass(f){if(f==null)return"–";const L=[[1e-4,"X"],[1e-5,"M"],[1e-6,"C"],[1e-7,"B"],[0,"A"]];for(const[t,c]of L)if(f>=t)return c+(f/(t||1e-8)).toFixed(1)}
+
+/* ---------- places ---------- */
+function rPlaces(){const all=[DEF,...places];$("places").innerHTML=all.map((p,i)=>`<option value="${i}">${p.name}</option>`).join("");const i=all.findIndex(p=>p.lat===cur.lat&&p.lon===cur.lon);$("places").value=i>=0?i:0}
+$("places").onchange=e=>{cur=[DEF,...places][+e.target.value];localStorage.setItem("dx_cur",JSON.stringify(cur));load()};
+$("gps").onclick=()=>{if(!navigator.geolocation)return alert("Trình duyệt không hỗ trợ định vị.");navigator.geolocation.getCurrentPosition(p=>{cur={name:"Vị trí hiện tại",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};localStorage.setItem("dx_cur",JSON.stringify(cur));rPlaces();load()},()=>alert("Không lấy được vị trí. Hãy cho phép quyền định vị."))};
+$("save").onclick=()=>{const n=prompt("Tên điểm DX?",cur.name);if(!n)return;places.push({name:n,lat:cur.lat,lon:cur.lon});localStorage.setItem("dx_places",JSON.stringify(places));cur=places[places.length-1];localStorage.setItem("dx_cur",JSON.stringify(cur));rPlaces()};
+$("refresh").onclick=()=>load();
+$("notify").onclick=async()=>{if(!("Notification"in window))return alert("Trình duyệt không hỗ trợ thông báo.");const r=await Notification.requestPermission();notifyOn=r==="granted";localStorage.setItem("dx_notify",notifyOn?"1":"0");$("notify").textContent=notifyOn?"Thông báo: đã bật":"Thông báo bị chặn"};
+$("slider").oninput=()=>D&&render();
+
+/* ---------- data ---------- */
+async function getHQ(){
+  const c=JSON.parse(localStorage.getItem("dx_hq")||"null");if(c&&Date.now()-c.t<3600000)return c.d;
+  const u="https://www.hamqsl.com/solarxml.php",tries=[u,"https://api.allorigins.win/raw?url="+encodeURIComponent(u),"https://corsproxy.io/?"+encodeURIComponent(u)];
+  for(const t of tries){try{const r=await fetch(t);if(!r.ok)continue;const x=new DOMParser().parseFromString(await r.text(),"text/xml");
+    const g=k=>{const e=x.getElementsByTagName(k)[0];return e?e.textContent.trim():""};if(!g("solarflux"))continue;
+    const xs=g("xray"),xm={A:1e-8,B:1e-7,C:1e-6,M:1e-5,X:1e-4},b={};
+    [...x.getElementsByTagName("band")].forEach(e=>b[e.getAttribute("name")+e.getAttribute("time")]=e.textContent.trim());
+    const d={sfi:num(g("solarflux")),a:num(g("aindex")),k:num(g("kindex")),ssn:num(g("sunspots")),xr:xm[xs[0]]?xm[xs[0]]*(num(xs.slice(1))||1):null,pf:g("protonflux"),ef:g("electonflux"),lat:num(g("latdegree")),sw:num(g("solarwind")),bz:num(g("magneticfield")),geo:g("geomagfield"),noise:g("signalnoise"),upd:g("updated"),b};
+    localStorage.setItem("dx_hq",JSON.stringify({t:Date.now(),d}));return d}catch(e){}}
+  throw 0;
+}
+async function getSpace(){
+  const o={sfi:null,kp:null,kpMax24:null,xr:null,vsw:null,bz:null,feed:[],ok:{},hq:null};
+  const run=(k,f)=>f().then(()=>o.ok[k]=1).catch(()=>o.ok[k]=0);
+  await Promise.all([
+    run("HamQSL",async()=>{o.hq=await getHQ()}),
+    run("Kp",async()=>{const a=objs(await jget("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json")),v=a.map(r=>num(r.Kp??r.kp_index??r.estimated_kp)).filter(x=>x!=null);o.kp=v[v.length-1];o.kpMax24=Math.max(...v.slice(-8));if(o.kp==null)throw 0}),
+    run("SFI",async()=>{const d=await jget("https://services.swpc.noaa.gov/products/summary/10cm-flux.json");o.sfi=num(d.Flux??d.flux);if(o.sfi==null)throw 0}),
+    run("X-ray",async()=>{const a=objs(await jget("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json")).filter(r=>String(r.energy).includes("0.1-0.8"));o.xr=num(a[a.length-1].flux);if(o.xr==null)throw 0}),
+    run("Gió MT",async()=>{const a=objs(await jget("https://services.swpc.noaa.gov/products/solar-wind/plasma-2-hour.json")).map(r=>num(r.speed)).filter(x=>x!=null);o.vsw=a[a.length-1];if(o.vsw==null)throw 0}),
+    run("Bz",async()=>{const a=objs(await jget("https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json")).map(r=>num(r.bz_gsm)).filter(x=>x!=null);o.bz=a[a.length-1];if(o.bz==null)throw 0}),
+    run("Cảnh báo",async()=>{o.feed=objs(await jget("https://services.swpc.noaa.gov/products/alerts.json")).filter(r=>/X-ray|X-Ray|K-index|Geomagnetic Storm|Sudden Impulse|Proton|Radio Blackout/.test(r.message||"")).slice(0,6).map(r=>{const m=(r.message||"").match(/(?:ALERT|WARNING|WATCH|SUMMARY|CANCEL WATCH|EXTENDED WARNING):\s*([^\n\r]+)/);return{t:r.issue_datetime,txt:m?m[0].trim():r.product_id}})})
+  ]);
+  const h=o.hq;if(h){if(o.sfi==null)o.sfi=h.sfi;if(o.kp==null)o.kp=h.k;if(o.xr==null)o.xr=h.xr;if(o.vsw==null)o.vsw=h.sw;if(o.bz==null)o.bz=h.bz;if(o.kpMax24==null)o.kpMax24=o.kp;
+    if(o.sfi!=null)o.ok["SFI"]=1;if(o.kp!=null)o.ok["Kp"]=1;if(o.xr!=null)o.ok["X-ray"]=1}
+  return o;
+}
+async function getWx(){
+  const L=[1000,975,950,925,900,850],h=["temperature_2m","relative_humidity_2m","surface_pressure","precipitation","cape","cloud_cover","wind_speed_10m",...L.flatMap(p=>["temperature_","relative_humidity_","geopotential_height_"].map(v=>v+p+"hPa"))].join(",");
+  const q=`?latitude=${cur.lat}&longitude=${cur.lon}&hourly=${h}&daily=sunrise,sunset&forecast_days=3&timezone=auto`;
+  for(const ep of["gfs","forecast"]){try{const d=await jget("https://api.open-meteo.com/v1/"+ep+q);if(d.hourly&&d.hourly.time)return{d,src:ep==="gfs"?"GFS":"Open-Meteo"}}catch(e){}}
+  throw new Error("Open-Meteo không phản hồi");
+}
+function N(T,P,RH){const K=T+273.15,e=RH/100*6.1078*Math.pow(10,7.5*T/(T+237.3));return 77.6/K*(P+4810*e/K)}
+function duct(H,i,el){ // gradient chiết suất N/km nhỏ nhất giữa các tầng, dưới ~3 km
+  const pts=[],Ts=num(H.temperature_2m[i]),Ps=num(H.surface_pressure[i]),Rs=num(H.relative_humidity_2m[i]);
+  if(Ts!=null&&Ps!=null&&Rs!=null)pts.push({z:el+2,n:N(Ts,Ps,Rs)});
+  [1000,975,950,925,900,850].forEach(p=>{const T=num(H["temperature_"+p+"hPa"][i]),R=num(H["relative_humidity_"+p+"hPa"][i]),z=num(H["geopotential_height_"+p+"hPa"][i]);if(T!=null&&R!=null&&z!=null&&z>el+40)pts.push({z,n:N(T,p,R)})});
+  pts.sort((a,b)=>a.z-b.z);let g=null,gz=null;
+  for(let k=1;k<pts.length;k++){const dz=pts[k].z-pts[k-1].z;if(dz<40)continue;const x=(pts[k].n-pts[k-1].n)/(dz/1000);if(g==null||x<g){g=x;gz=Math.round((pts[k].z+pts[k-1].z)/2)}}
+  return{g,gz,layers:pts.length};
+}
+const dScore=g=>g==null?null:g>-40?g>-20?0:10*(g+20)/-20*.2:g>-79?2+(-40-g)/39*2:g>-157?4+(-79-g)/78*3:7+Math.min(3,(-157-g)/60*3);
+
+function analyse(W,S){
+  const d=W.d,off=d.utc_offset_seconds||0,H=d.hourly,Dd=d.daily,el=d.elevation||0;
+  const ts=H.time.map(t=>Date.parse(t+"Z")-off*1000),sun={};
+  Dd.time.forEach((k,i)=>sun[k]={r:Date.parse(Dd.sunrise[i]+"Z")-off*1000,s:Date.parse(Dd.sunset[i]+"Z")-off*1000});
+  return ts.map((t,i)=>{
+    const lt=new Date(t+off*1000),key=lt.toISOString().slice(0,10),s=sun[key]||{},hr=lt.getUTCHours(),mo=lt.getUTCMonth()+1;
+    const day=t>=s.r&&t<s.s,gray=Math.min(Math.abs(t-s.r),Math.abs(t-s.s))<=45*60000;
+    const du=duct(H,i,el),cape=num(H.cape[i])||0,rain=num(H.precipitation[i])||0,cc=num(H.cloud_cover[i])||0;
+    const noise=clamp(cape/2500*60+rain*8+(cc>85?5:0),0,100);
+    const kp=S.kp??2,xr=S.xr??0;let pen=1;if(kp>=5)pen*=.6;else if(kp>=4)pen*=.85;if(S.bz!=null&&S.bz<-8)pen*=.9;
+    if(day&&xr>=1e-4)pen*=.2;else if(day&&xr>=1e-5)pen*=.5;
+    let hi=S.sfi!=null?clamp((S.sfi-65)/1.35,0,100):40;hi*=day?1:.25;if(gray)hi+=5;hi=clamp(hi*pen,0,100);
+    let lo=day?30:70;if(gray)lo+=10;if(kp>=5)lo-=20;lo=clamp(lo-noise*.3,0,100);
+    let mf=day?12:75;if(gray)mf+=15;if(kp>=5)mf-=10;mf=clamp(mf-noise*.4,0,100);
+    const fm=dScore(du.g),sprd=(hr>=19&&hr<=23)?([3,4,9,10].includes(mo)?"Cao":"Trung bình"):"Thấp";
+    return{t,day,gray,hi,lo,mf,lf:mf,fm:fm==null?null:fm*10,air:fm==null?null:fm*10,g:du.g,gz:du.gz,layers:du.layers,noise,cape,rain,sprd,T:num(H.temperature_2m[i]),RH:num(H.relative_humidity_2m[i]),P:num(H.surface_pressure[i]),sunr:s.r,suns:s.s};
+  });
+}
+const BANDS=[
+ {k:"lf",n:"LF",f:"30–300 kHz",a:3e4,b:3e5},{k:"mf",n:"MF",f:"0,3–3 MHz",a:3e5,b:3e6},
+ {k:"lo",n:"HF thấp",f:"3–10 MHz",a:3e6,b:1e7},{k:"hi",n:"HF cao",f:"10–30 MHz",a:1e7,b:3e7},
+ {k:"fm",n:"FM",f:"87,5–108 MHz",a:8.75e7,b:1.08e8},{k:"air",n:"Airband",f:"118–137 MHz",a:1.18e8,b:1.37e8}];
+const WHY={
+ lf:r=>r.day?"Ban ngày tầng D hấp thụ gần hết sóng trời LF/MF.":"Ban đêm sóng trời LF/MF đi xa; nhiễu sét là kẻ thù chính.",
+ mf:r=>r.day?"Ban ngày tầng D hấp thụ gần hết sóng trời MF.":"Ban đêm MF mở xa, gray line là lúc đẹp nhất.",
+ lo:r=>r.day?"Ban ngày băng thấp bị hấp thụ tầng D.":"Ban đêm băng thấp và băng tropical thường mở tốt.",
+ hi:r=>r.day?"Ban ngày tầng F ion hóa mạnh thì băng cao dễ mở.":"Ban đêm băng cao thường đóng.",
+ fm:r=>r.g==null?"Thiếu dữ liệu khí tượng.":`Gradient chiết suất ${Math.round(r.g)} N/km tại ~${r.gz} m (chuẩn −40; dưới −157 là ống dẫn).`};
+WHY.air=WHY.fm;
+function conf(k,off){
+  const miss=Object.entries(D.S.ok).filter(([a,b])=>!b&&["Kp","SFI","X-ray"].includes(a)).map(a=>a[0]);
+  if(k==="fm"||k==="air")return off>24?["Thấp","dự báo xa hơn 24 giờ"]:D.rows[D.i0].layers<3?["Thấp","ít tầng khí quyển hợp lệ"]:["Trung bình","tính từ mô hình GFS, chưa có số đo thực tế"];
+  if(miss.length)return["Thấp","thiếu dữ liệu: "+miss.join(", ")];
+  return off>12?["Thấp","giả định Kp/SFI/X-ray giữ nguyên"]:["Trung bình","ước tính từ SFI, Kp, X-ray; chưa có ionosonde"];
+}
+
+function hqAgree(k,v,r,offH){const q=D.S.hq;if(!q||offH>3||(k!=="lo"&&k!=="hi"))return null;const m=q.b[(k==="lo"?"80m-40m":"17m-15m")+(r.day?"day":"night")];if(!m)return null;const e=v>=70?"Good":v>=40?"Fair":"Poor";return{ok:e===m,t:"HamQSL: "+m+(e===m?" (khớp)":" (khác)")}}
+/* ---------- render ---------- */
+function dialSVG(r){
+  const X=f=>20+(Math.log10(f)-4.477)/3.67*660,bl=130;let s=`<svg viewBox="0 0 700 190" role="img" aria-label="Mặt đài radio hiển thị điểm DX từng băng"><defs><filter id="gl"><feGaussianBlur stdDeviation="4"/></filter></defs><line x1="20" x2="680" y1="${bl}" y2="${bl}" stroke="#26325a"/>`;
+  [[1e4,"10 kHz"],[1e5,"100 kHz"],[1e6,"1 MHz"],[1e7,"10 MHz"],[1e8,"100 MHz"]].forEach(([f,t])=>{const x=X(f);if(x>=20&&x<=680)s+=`<line x1="${x}" x2="${x}" y1="${bl}" y2="${bl+8}" stroke="#8a93b5"/><text x="${x}" y="${bl+22}" fill="#8a93b5" font-size="11" text-anchor="middle">${t}</text>`});
+  for(let e=4;e<=8;e++)for(let m=2;m<=9;m++){const x=X(m*Math.pow(10,e));if(x>20&&x<680)s+=`<line x1="${x}" x2="${x}" y1="${bl}" y2="${bl+4}" stroke="#26325a"/>`}
+  BANDS.forEach((b,i)=>{const v=r[b.k];const x1=X(b.a),x2=X(b.b),w=Math.max(10,x2-x1),h=v==null?4:6+v*.9,c=v==null?"#26325a":ramp(v),ly=bl-h-8-(b.k==="air"?16:0);
+    s+=`<rect class="b" x="${x1}" width="${w}" y="${bl-h}" height="${h}" rx="3" fill="${c}" opacity=".55" filter="url(#gl)"/><rect class="b" x="${x1}" width="${w}" y="${bl-h}" height="${h}" rx="3" fill="${c}"/><text x="${x1+w/2}" y="${ly}" fill="#e9ecf8" font-size="12" text-anchor="middle" font-weight="600">${b.n} ${v==null?"–":Math.round(v)}</text>`});
+  return s+"</svg>";
+}
+function render(){
+  const {rows,i0,S,off}=D,sel=clamp(i0+(+$("slider").value),0,rows.length-1),r=rows[sel],offH=sel-i0;
+  $("whenTxt").textContent=offH===0?"Bây giờ":"+"+offH+" giờ · "+fmtT(r.t,off);
+  $("place").textContent=`${cur.name} (${cur.lat}, ${cur.lon}) · nguồn thời tiết ${D.src} · cập nhật ${new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"})}`;
+  $("dial").innerHTML=dialSVG(r);
+  const sp=(v,u="",dg=0)=>v==null?"–":(+v).toFixed(dg)+u;
+  const st=[["SFI",sp(S.sfi,"",0),"chỉ số bức xạ 10,7 cm"],["Kp",sp(S.kp,"",1),S.kpMax24!=null?"cao nhất 24h: "+S.kpMax24.toFixed(1):""],["X-ray",xclass(S.xr),"flare hiện tại"],["Gió mặt trời",sp(S.vsw," km/s"),"Bz "+sp(S.bz," nT",1)],
+    ["Nhiễu sét",Math.round(r.noise)+"/100","CAPE "+Math.round(r.cape)+" J/kg"],["Khí quyển",sp(r.T,"°C",1),"ẩm "+sp(r.RH,"%")+" · "+sp(r.P," hPa")],
+    ["Mặt trời",fmtT(r.sunr,off).slice(0,5)+" / "+fmtT(r.suns,off).slice(0,5),"mọc / lặn (giờ địa phương)"],["Spread-F",r.sprd,"ước tính theo mùa và giờ"],...(S.hq?[["A-index",S.hq.a??"–","HamQSL"],["Sunspot",S.hq.ssn??"–","số vết đen"],["Nhiễu nền",S.hq.noise||"–","mức S dự kiến"],["Từ trường",S.hq.geo||"–","tình trạng địa từ"],["Proton",S.hq.pf||"–","pfu"],["Electron",S.hq.ef||"–","pfu"],["Cực quang",S.hq.lat!=null?S.hq.lat+"°":"–","vĩ độ thấp nhất"]]:[])];
+  $("stats").innerHTML=st.map(([a,b,c])=>`<div class="st"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join("");
+  $("cards").innerHTML=BANDS.map(b=>{const v=r[b.k];if(v==null)return`<div class="card"><h2>${b.n} <small>${b.f}</small><em>–</em></h2><div class="why err">Thiếu dữ liệu.</div></div>`;
+    let[c,cw]=conf(b.k,offH);const hq=hqAgree(b.k,v,r,offH);if(hq){cw=cw+" · "+hq.t;if(hq.ok&&c==="Trung bình")c="Khá cao"}const cells=rows.slice(i0,i0+48).map((x,j)=>`<i class="${i0+j===sel?"sel":""}" style="background:${x[b.k]==null?"#26325a":ramp(x[b.k])}" title="${fmtT(x.t,off)}: ${x[b.k]==null?"–":Math.round(x[b.k])}"></i>`).join("");
+    return`<div class="card"><h2>${b.n} <small>${b.f}</small><em>${Math.round(v)} <small>${lab(v)}</small></em></h2><div class="why">${WHY[b.k](r)}</div><div class="cf"><b>Tin cậy: ${c}</b> <small class="sub">(${cw})</small></div><div class="heat">${cells}</div><div class="ax"><span>bây giờ</span><span>+24 giờ</span><span>+48 giờ</span></div></div>`}).join("");
+  const r0=rows[i0];let s=`Lúc này ${r0.day?"đang ban ngày":"đang ban đêm"}${r0.gray?", đúng giờ gray line":""}. `;
+  const ranked=BANDS.filter(b=>r0[b.k]!=null).sort((a,b)=>r0[b.k]-r0[a.k])[0];
+  s+=ranked&&r0[ranked.k]>=40?`Băng đáng thử nhất là ${ranked.n} (${lab(r0[ranked.k])}, ${Math.round(r0[ranked.k])}/100). `:"Chưa có băng nào thật sự thuận lợi. ";
+  if(S.kp>=5)s+="Bão địa từ đang mạnh, HF dễ suy giảm. ";else if(S.kpMax24>=5)s+="24 giờ qua có bão địa từ, HF có thể còn bất ổn. ";
+  if(S.xr>=1e-5&&r0.day)s+="Có flare mức M trở lên, HF ban ngày có thể mất sóng tạm thời. ";
+  if(r0.noise>=50)s+="Nhiễu sét cao, MF/LF và HF thấp sẽ ồn. ";
+  const nx=rows.slice(i0,i0+24),pk=nx.map((x,j)=>({j,v:x.fm||0})).sort((a,b)=>b.v-a.v)[0];
+  if(pk&&pk.v>=50)s+=`Ducting FM/airband có thể mạnh nhất lúc ${fmtT(nx[pk.j].t,off).slice(0,5)}. `;
+  if(r0.sprd==="Cao")s+="Buổi tối gần xích đạo vào mùa này dễ có spread-F, tín hiệu HF có thể chập chờn. ";
+  $("sum").textContent=s+"Tin cậy ghi ở từng băng; đây là ước tính chứ không phải số đo.";
+  const q=S.hq;$("hq").innerHTML=q?'<div class="sub">N0NBH cập nhật: '+q.upd+'</div>'+[["80m-40m","3,5–7 MHz (75/60/49/41 m)"],["30m-20m","10–14 MHz (31/25/22/19 m)"],["17m-15m","18–21 MHz (16/15/13 m)"],["12m-10m","24–30 MHz (12/11/10 m)"]].map(([k,t])=>'<div><b>'+t+'</b> · ngày: '+(q.b[k+"day"]||"–")+' · đêm: '+(q.b[k+"night"]||"–")+'</div>').join(""):"Không tải được HamQSL.";
+  $("chips").innerHTML=Object.entries(S.ok).map(([k,v])=>`<span class="chip ${v?"ok":"bad"}">${k}: ${v?"ok":"lỗi"}</span>`).join("")+`<span class="chip ok">${D.src}</span>`;
+  $("feed").innerHTML=S.feed.length?S.feed.map(f=>`<div><time>${(f.t||"").slice(5,16)} UTC</time>${f.txt}</div>`).join(""):"Không có cảnh báo liên quan hoặc không tải được.";
+  // cảnh báo chủ động (khi đang mở trang)
+  const th={lf:70,mf:70,lo:70,hi:70,fm:50,air:50},al=[];
+  BANDS.forEach(b=>{const h=rows.slice(i0,i0+6).find(x=>(x[b.k]||0)>=th[b.k]);const key=b.k+cur.name;
+    if(h){const w=h.t<=Date.now()+3600000?"ngay bây giờ":"lúc "+fmtT(h.t,off).slice(0,5);const m=`${b.n} (${b.f}): điều kiện tốt ${w}. Tin cậy ${conf(b.k,h.t>Date.now()+3600000?6:0)[0].toLowerCase()}.`;al.push(m);
+      if(notifyOn&&Notification.permission==="granted"&&!sent[key]){sent[key]=1;new Notification("DX: cơ hội nghe",{body:m})}}else delete sent[key]});
+  $("alerts").innerHTML=al.map(m=>`<div class="al">${m}</div>`).join("");
+}
+async function load(){
+  $("sum").textContent="Đang lấy dữ liệu từ NOAA và Open-Meteo…";
+  try{
+    const[W,S]=await Promise.all([getWx(),getSpace()]),rows=analyse(W,S),now=Date.now();
+    let i0=rows.findIndex(r=>r.t>=now-3600000);if(i0<0)i0=0;
+    D={rows,i0,S,off:W.d.utc_offset_seconds||0,src:W.src};$("slider").value=0;$("slider").max=Math.min(47,rows.length-1-i0);render();
+  }catch(e){$("sum").innerHTML=`<span class="err">Không tải được dữ liệu thời tiết (${e.message}).</span> Mở file qua https:// (GitHub Pages, Cloudflare Pages) hoặc kiểm tra mạng rồi bấm Làm mới.`}
+}
+rPlaces();if(notifyOn)$("notify").textContent="Thông báo: đã bật";load();setInterval(load,10*60*1000);
+</script>
+</body>
+</html>
